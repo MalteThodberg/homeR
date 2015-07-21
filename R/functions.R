@@ -74,10 +74,10 @@ call_homer <- function(pos_file, genome, # Mandatory
 	if(!is.null(nomotif)){cline <- paste(cline, "-nomotif")}
 
 	# Execute!
-	system(cline)
+	#system(cline)
 
 	# Read results back into R
-	# Too be added...
+	# To bed
 
 	# Return cline
 	cline
