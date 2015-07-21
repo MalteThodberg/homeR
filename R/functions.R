@@ -77,7 +77,7 @@ call_homer <- function(pos_file, genome, # Mandatory
 	system(cline)
 
 	# Read results back into R
-	# Too be added...
+	# To bed
 
 	# Return cline
 	cline
