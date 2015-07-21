@@ -1,0 +1,11 @@
+Package: homeR
+Type: Package
+Title: Run Homer from inside R
+Version: 0.1
+Date: 2015-07-21
+Author: Malte Thodberg
+Maintainer: <maltethodberg@gmail.com>
+Description: Enrichment of known and de-novo motifs using Homer, running inside of R.
+Imports: GenomicRanges
+License: GPL-3
+LazyData: TRUE
