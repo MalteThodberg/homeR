@@ -123,7 +123,7 @@ parse_homer <- function(){
 	# Reformat
 	homer_motifs <- homer_motifs %>%
 		mutate(Consensus=gsub(pattern=">", replacement="", x=Consensus),
-					 guess=gsub(pattern="BestGuess:", replacement="", x=Guess),
+					 Guess=gsub(pattern="BestGuess:", replacement="", x=Guess),
 					 T=str_split(string=T, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
 					 B=str_split(string=B, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
 					 P=gsub(pattern="P:", replacement="", x=P) %>% as.numeric,
@@ -133,8 +133,8 @@ parse_homer <- function(){
 					 Bstd=gsub(pattern="Bstd:", replacement="", x=Bstd) %>% as.numeric,
 					 StrandBias=gsub(pattern="StrandBias:", replacement="", x=StrandBias) %>% as.numeric,
 					 Multiplicity=gsub(pattern="Multiplicity:", replacement="", x=Multiplicity) %>% as.numeric) %>%
-		mutate(orientation=ifelse(test=grepl(pattern="RV", x=motif_fnames), yes="reverse", no="forward"),
-					 length=sapply(homer_PWMs, nrow))
+		mutate(Orientation=ifelse(test=grepl(pattern="RV", x=motif_fnames), yes="reverse", no="forward"),
+					 Length=sapply(homer_PWMs, nrow))
 
 	### Trim
 
@@ -194,8 +194,6 @@ call_homer <- function(pos_file, genome, # Mandatory
 	if(!is.null(norevopp)){cline <- paste(cline, "-norevopp", norevopp)}
 	if(!is.null(rna)){cline <- paste(cline, "-rna", rna)}
 	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
-	if(!is.null(rna)){cline <- paste(cline, "-rna", rna)}
-	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
 	if(!is.null(mcheck)){cline <- paste(cline, "-mcheck", mcheck)}
 	if(!is.null(mknown)){cline <- paste(cline, "-mknown", mknown)}
 	if(!is.null(p)){cline <- paste(cline, "-p", p)}
@@ -213,14 +211,14 @@ call_homer <- function(pos_file, genome, # Mandatory
 	# Read results back into R
 	res <- list(command=cline)
 
-	if(is.null(nomotif)){
-		res["known_motifs"] <- parse_known()
+	if(is.null(noknown)){
+		res$known_motifs <- parse_known()
 	}
 
-	if(is.null(noknown)){
+	if(is.null(nomotif)){
 		tmp <- parse_homer()
-		res["homer_motifs"] <- tmp[[1]]
-		res["homer_PWMs"] <- tmp[[2]]
+		res$homer_motifs <- tmp$homer_motifs
+		res$homer_PWMs <- tmp$homer_PWMs
 	}
 
 	# Return cline
