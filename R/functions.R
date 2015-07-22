@@ -41,7 +41,7 @@ GR_to_BED <- function(GR){
 #' @author Malte Thodberg
 #' @details Parses from the "knownResults.txt" file of a Homer analysis.
 #' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
-#' @import dplyr
+#' @import magrittr dplyr
 #' @export
 parse_known <- function(){
 	# Read simple table
@@ -67,7 +67,7 @@ parse_known <- function(){
 #' @author Malte Thodberg
 #' @details Parses from the "homerResults/" folder and "homerMotifs.all.motifs" file of a Homer analysis and merges the results.
 #' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
-#' @import tidyr dplyr
+#' @import magrittr stringr tidyr dplyr
 #' @export
 parse_homer <- function(){
 	### Folder motifs
@@ -162,13 +162,23 @@ parse_homer <- function(){
 #' @param norevopp See findMotifsGenome.pl
 #' @param nomotif See findMotifsGenome.pl
 #' @param rna	See findMotifsGenome.pl
-#' @return Homer-output as data.frame.
+#' @param mset See findMotifsGenome.pl
+#' @param basic See findMotifsGenome.pl
+#' @param bits See findMotifsGenome.pl
+#' @param nocheck See findMotifsGenome.pl
+#' @param mcheck See findMotifsGenome.pl
+#' @param noknown See findMotifsGenome.pl
+#' @param mknown See findMotifsGenome.pl
+#' @param p See findMotifsGenome.pl
+#' @return List with output: command line used, and (if selected), known results, de-novo results and de-novo PWMs.
 #' @author Malte Thodberg
 #' @details Simple R-wrapper for Homer's findMotifsGenome.pl. Saves all temporary files to tempdir().
 #' @seealso \code{\link{GR_to_BED}} \code{\link{tempdir}}
 #' @export
 call_homer <- function(pos_file, genome, # Mandatory
-											 mask=NULL, bg=NULL, len=NULL, size=NULL, S=NULL, mis=NULL, norevopp=NULL, nomotif=NULL, rna=NULL){ # Basic options
+											 mask=NULL, bg=NULL, len=NULL, size=NULL, S=NULL, mis=NULL, norevopp=NULL, nomotif=NULL, rna=NULL, # Basic options
+											 mset=NULL, basic=NULL, bits=NULL, nocheck=NULL, mcheck=NULL, noknown=NULL, mknown=NULL, #Known motif options
+											 p=NULL){ # Homer options
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
@@ -183,16 +193,36 @@ call_homer <- function(pos_file, genome, # Mandatory
 	if(!is.null(mis)){cline <- paste(cline, "-mis", mis)}
 	if(!is.null(norevopp)){cline <- paste(cline, "-norevopp", norevopp)}
 	if(!is.null(rna)){cline <- paste(cline, "-rna", rna)}
+	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
+	if(!is.null(rna)){cline <- paste(cline, "-rna", rna)}
+	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
+	if(!is.null(mcheck)){cline <- paste(cline, "-mcheck", mcheck)}
+	if(!is.null(mknown)){cline <- paste(cline, "-mknown", mknown)}
+	if(!is.null(p)){cline <- paste(cline, "-p", p)}
 
 	# Add TRUE/FALSE settings.
 	if(!is.null(nomotif)){cline <- paste(cline, "-nomotif")}
+	if(!is.null(basic)){cline <- paste(cline, "-basic")}
+	if(!is.null(bits)){cline <- paste(cline, "-bits")}
+	if(!is.null(nocheck)){cline <- paste(cline, "-nocheck")}
+	if(!is.null(noknown)){cline <- paste(cline, "-noknown")}
 
 	# Execute!
-	#system(cline) new change
+	system(cline)
 
 	# Read results back into R
-	# To bed
+	res <- list(command=cline)
+
+	if(is.null(nomotif)){
+		res["known_motifs"] <- parse_known()
+	}
+
+	if(is.null(noknown)){
+		tmp <- parse_homer()
+		res["homer_motifs"] <- tmp[[1]]
+		res["homer_PWMs"] <- tmp[[2]]
+	}
 
 	# Return cline
-	cline
+	res
 }

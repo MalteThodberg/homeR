@@ -6,7 +6,8 @@
 \usage{
 call_homer(pos_file, genome, mask = NULL, bg = NULL, len = NULL,
   size = NULL, S = NULL, mis = NULL, norevopp = NULL, nomotif = NULL,
-  rna = NULL)
+  rna = NULL, mset = NULL, basic = NULL, bits = NULL, nocheck = NULL,
+  mcheck = NULL, noknown = NULL, mknown = NULL, p = NULL)
 }
 \arguments{
 \item{pos_file}{See findMotifsGenome.pl}
@@ -30,9 +31,25 @@ call_homer(pos_file, genome, mask = NULL, bg = NULL, len = NULL,
 \item{nomotif}{See findMotifsGenome.pl}
 
 \item{rna}{See findMotifsGenome.pl}
+
+\item{mset}{See findMotifsGenome.pl}
+
+\item{basic}{See findMotifsGenome.pl}
+
+\item{bits}{See findMotifsGenome.pl}
+
+\item{nocheck}{See findMotifsGenome.pl}
+
+\item{mcheck}{See findMotifsGenome.pl}
+
+\item{noknown}{See findMotifsGenome.pl}
+
+\item{mknown}{See findMotifsGenome.pl}
+
+\item{p}{See findMotifsGenome.pl}
 }
 \value{
-Homer-output as data.frame.
+List with output: command line used, and (if selected), known results, de-novo results and de-novo PWMs.
 }
 \description{
 Call the findMotifsGenome.pl from Homer from inside R.
