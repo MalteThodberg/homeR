@@ -2,6 +2,10 @@
 
 export(GR_to_BED)
 export(call_homer)
+export(parse_homer)
 export(parse_known)
 import(GenomicRanges)
 import(dplyr)
+import(magrittr)
+import(stringr)
+import(tidyr)

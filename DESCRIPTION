@@ -7,7 +7,9 @@ Author: Malte Thodberg
 Maintainer: <maltethodberg@gmail.com>
 Description: Enrichment of known and de-novo motifs using Homer, running inside of R.
 Imports:
+	magrittr,
 	GenomicRanges,
+	stringr,
 	tidyr,
 	dplyr
 License: GPL-3
