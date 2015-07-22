@@ -33,6 +33,120 @@ GR_to_BED <- function(GR){
 	bed_fname
 }
 
+#' Parse known motifs from Homer
+#'
+#' Parse known motifs form a Homer analysis from tempdir(). Should not normally be called by the user.
+#'
+#' @return A dataframe of known motif results.
+#' @author Malte Thodberg
+#' @details Parses from the "knownResults.txt" file of a Homer analysis.
+#' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
+#' @import dplyr
+#' @export
+parse_known <- function(){
+	# Read simple table
+	known_motifs <- read.table(file=file.path(tempdir(), "knownResults.txt"), sep="\t", header=T, comment.char="")
+
+	# Reformat
+	colnames(known_motifs) <- c("Name", "Consensus", "Pval", "Log-pval", "Qval", "Tcount", "T", "Bcount", "B")
+
+	known_motifs %>%
+		mutate(T=gsub(pattern="%", replacement="", x=T) %>% as.numeric %>% divide_by(100),
+					 B=gsub(pattern="%", replacement="", x=B) %>% as.numeric %>% divide_by(100)) %>%
+		select(-Tcount, -Bcount)
+
+	# Return
+	known_motifs
+}
+
+#' Parse de-novo motifs from Homer
+#'
+#' Parse de-novo motifs from a Homer analysis from tempdir(). Should not normally be called by the user.
+#'
+#' @return A list containing a dataframe of de-novo motif results and a list of corresponding PWMs.
+#' @author Malte Thodberg
+#' @details Parses from the "homerResults/" folder and "homerMotifs.all.motifs" file of a Homer analysis and merges the results.
+#' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
+#' @import tidyr dplyr
+#' @export
+parse_homer <- function(){
+	### Folder motifs
+
+	# Files
+	motif_fnames <- list.files(file.path(tempdir(), "homerResults"), full.names=TRUE)
+	motif_fnames <- motif_fnames[grepl(pattern=".motif", x=motif_fnames, fixed=TRUE)]
+
+	# Seperate PWMS
+	homer_PWMs <- lapply(motif_fnames, read.table, skip=1, col.names=c("A", "C", "G", "T"))
+
+	# Reformat info
+	folder_motifs <- lapply(motif_fnames, read.table, nrows=1, sep="\t") %>%
+		Reduce(rbind, .) %>%
+		as.data.frame()
+	colnames(folder_motifs) <- c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence")
+
+	# Split names
+	folder_motifs <- separate(folder_motifs, Name, into=c("Name", "Guess"), sep=",", extra="drop")
+
+	# Rename PWMs
+	names(homer_PWMs) <- folder_motifs$Name
+
+	### File motifs
+
+	# Read from file starting with >
+	heap <- readLines(file.path(tempdir(), "homerMotifs.all.motifs"))
+	heap <- heap[grep(pattern=">", x=heap)]
+
+	# Reformat info
+	file_motifs <- heap %>%
+		str_split(pattern="\t") %>%
+		as.data.frame %>%
+		t %>%
+		as.data.frame
+	colnames(file_motifs) <- c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence", "Statistics")
+	rownames(file_motifs) <- NULL
+
+	file_motifs <- file_motifs %>%
+		mutate(`Log-odds`=as.numeric(`Log-odds`),
+					 `Log-pval`=as.numeric(`Log-pval`),
+					 Placeholder=as.integer(Placeholder))
+
+	### Merge info
+
+	# Merge frames
+	homer_motifs <- left_join(folder_motifs, file_motifs, by=c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence"))
+
+	# Split columns
+	homer_motifs <- separate(homer_motifs, Occurence, into=c("T", "B", "P"), sep=",", extra="drop")
+	homer_motifs <- separate(homer_motifs, Statistics, into=c("Tpos", "Tstd", "Bpos", "Bstd", "StrandBias", "Multiplicity"), sep=",", extra="drop")
+
+	# Reformat
+	homer_motifs <- homer_motifs %>%
+		mutate(Consensus=gsub(pattern=">", replacement="", x=Consensus),
+					 guess=gsub(pattern="BestGuess:", replacement="", x=Guess),
+					 T=str_split(string=T, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
+					 B=str_split(string=B, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
+					 P=gsub(pattern="P:", replacement="", x=P) %>% as.numeric,
+					 Tpos=gsub(pattern="Tpos:", replacement="", x=Tpos) %>% as.numeric,
+					 Tstd=gsub(pattern="Tstd:", replacement="", x=Tstd) %>% as.numeric,
+					 Bpos=gsub(pattern="Bpos:", replacement="", x=Bpos) %>% as.numeric,
+					 Bstd=gsub(pattern="Bstd:", replacement="", x=Bstd) %>% as.numeric,
+					 StrandBias=gsub(pattern="StrandBias:", replacement="", x=StrandBias) %>% as.numeric,
+					 Multiplicity=gsub(pattern="Multiplicity:", replacement="", x=Multiplicity) %>% as.numeric) %>%
+		mutate(orientation=ifelse(test=grepl(pattern="RV", x=motif_fnames), yes="reverse", no="forward"),
+					 length=sapply(homer_PWMs, nrow))
+
+	### Trim
+
+	final_motifs <- !is.na(homer_motifs$Tpos)
+
+	homer_motifs <- subset(homer_motifs, final_motifs, select=-Placeholder)
+	homer_PWMs <- homer_PWMs[final_motifs]
+
+	### Return
+	list(homer_motifs=homer_motifs, homer_PWMs=homer_PWMs)
+}
+
 #' Motif Enrichment with Homer
 #'
 #' Call the findMotifsGenome.pl from Homer from inside R.
