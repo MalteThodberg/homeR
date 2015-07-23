@@ -149,61 +149,152 @@ parse_homer <- function(){
 
 #' Motif Enrichment with Homer
 #'
-#' Call the findMotifsGenome.pl from Homer from inside R.
+#' Call the findMotifsGenome.pl script from Homer directly from R.
 #'
-#' @param pos_file See findMotifsGenome.pl
-#' @param genome See findMotifsGenome.pl
-#' @param mask See findMotifsGenome.pl
-#' @param bg See findMotifsGenome.pl
-#' @param len See findMotifsGenome.pl
-#' @param size See findMotifsGenome.pl
-#' @param S See findMotifsGenome.pl
-#' @param mis See findMotifsGenome.pl
-#' @param norevopp See findMotifsGenome.pl
-#' @param nomotif See findMotifsGenome.pl
-#' @param rna	See findMotifsGenome.pl
-#' @param mset See findMotifsGenome.pl
-#' @param basic See findMotifsGenome.pl
-#' @param bits See findMotifsGenome.pl
-#' @param nocheck See findMotifsGenome.pl
-#' @param mcheck See findMotifsGenome.pl
-#' @param noknown See findMotifsGenome.pl
-#' @param mknown See findMotifsGenome.pl
-#' @param p See findMotifsGenome.pl
-#' @return List with output: command line used, and (if selected), known results, de-novo results and de-novo PWMs.
+#' @param pos_file <#> (Path to input BED-file)
+#' @param genome <#> (Installed Homer genome) or (path to FASTA)
+#' @param mask (mask repeats/lower case sequence, can also add 'r' to genome, i.e. mm9r)
+#' @param bg <background position file> (genomic positions to be used as background, default=automatic) removes background positions overlapping with target positions
+#' @param chopify (chop up large background regions to the avg size of target regions)
+#' @param len <#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the programto run out of memory - in these cases decrease the number of sequences analyzed (-N), or try analyzing shorter sequence regions (i.e. -size 100)]
+#' @param size <#> (fragment size to use for motif finding, default=200) or (i.e. -size -100,50 will get sequences from -100 to +50 relative from center) or given (uses the exact regions you give it)
+#' @param S <#> (Number of motifs to optimize, default: 25)
+#' @param mis <#> (global optimization: searches for strings with # mismatches, default: 2)
+#' @param norevopp (don't search reverse strand for motifs)
+#' @param rna (output RNA motif logos and compare to RNA motif database, automatically sets -norevopp)
+#' @param mset <vertebrates|insects|worms|plants|yeast|all> (check against motif collects, default: auto)
+#' @param bits (scale sequence logos by information content, default: doesn't scale)
+#' @param mcheck <motif file> (known motifs to check against de novo motifs)
+#' @param mknown <motif file> (known motifs to check for enrichment)
+#' @param gc (use GC-percentage for sequence content normalization, now the default)
+#' @param cpg (use CpG-percentage instead of GC-percentage for sequence content normalization)
+#' @param noweight (no CG correction)
+#' @param h (use hypergeometric for p-values, binomial is default)
+#' @param N <#> (Number of sequences to use for motif finding, default=max(50k, 2x input)
+#' @param local <#> (use local background, # of equal size regions around peaks to use i.e. 2)
+#' @param redundant <#> (Remove redundant sequences matching greater than # percent, i.e. -redundant 0.5)
+#' @param maxN <#> (maximum percentage of N's in sequence to consider for motif finding, default: 0.7)
+#' @param maskMotif <motif file1> [motif file 2]... (motifs to mask before motif finding)
+#' @param rand (randomize target and background sequences labels)
+#' @param ref <peak file> (use file for target and background - first argument is list of peak ids for targets)
+#' @param oligo (perform analysis of individual oligo enrichment)
+#' @param dumpFasta (Dump fasta files for target and background sequences for use with other programs)
+#' @param preparse (force new background files to be created)
+#' @param preparsedDir <directory> (location to search for preparsed file and/or place new files)
+#' @param keepFiles (keep temporary files)
+#' @param fdr <#> (Calculate empirical FDR for de novo discovery #=number of randomizations)
+#' @param nlen <#> (length of lower-order oligos to normalize in background, default: -nlen 3)
+#' @param nmax <#> (Max normalization iterations, default: 160)
+#' @param neutral (weight sequences to neutral frequencies, i.e. 25-percentage, 6.25-percentage, etc.)
+#' @param olen <#> (lower-order oligo normalization for oligo table, use if -nlen isn't working well)
+#' @param p <#> (Number of processors to use, default: 1)
+#' @param e <#> (Maximum expected motif instance per bp in random sequence, default: 0.01)
+#' @param cache <#> (size in MB for statistics cache, default: 500)
+#' @param quickMask (skip full masking after finding motifs, similar to original homer)
+#' @param minlp <#> (stop looking for motifs when seed logp score gets above #, default: -10)
+#' @return List with output: command line used, knowm motifs, Homer motifs (de-novo) and Homer PWMs.
 #' @author Malte Thodberg
-#' @details Simple R-wrapper for Homer's findMotifsGenome.pl. Saves all temporary files to tempdir().
+#' @details
+#' Simple R-wrapper for Homer's findMotifsGenome.pl.
+#' Instead of flags, it uses R-arguments which are pasted to a Homer command. Flags that modify output format are not implemented:
+#' -nomotif, -find, -enhancers, -enhancersOnly, -basic, -nocheck, -noknown, -nofacts, -opt, -peaks, -homer2.
+#'
+#' Saves all temporary files to tempdir(). Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
 #' @seealso \code{\link{GR_to_BED}} \code{\link{tempdir}}
 #' @export
 call_homer <- function(pos_file, genome, # Mandatory
-											 mask=NULL, bg=NULL, len=NULL, size=NULL, S=NULL, mis=NULL, norevopp=NULL, nomotif=NULL, rna=NULL, # Basic options
-											 mset=NULL, basic=NULL, bits=NULL, nocheck=NULL, mcheck=NULL, noknown=NULL, mknown=NULL, #Known motif options
-											 p=NULL){ # Homer options
+											 mask=NULL, bg=NULL, chopify=NULL, len=NULL, size=NULL, S=NULL, mis=NULL, norevopp=NULL, rna=NULL, # Basic options
+											 mset=NULL, bits=NULL, mcheck=NULL, mknown=NULL, #Known motif options
+											 gc=NULL, cpg=NULL, noweight=NULL, # Sequence normalization options
+											 h=NULL, N=NULL, local=NULL, redundant=NULL, maxN=NULL, maskMotif=NULL, rand=NULL, ref=NULL, oligo=NULL, dumpFasta=NULL, preparse=NULL, preparsedDir=NULL, keepFiles=NULL, fdr=NULL, #Advanced options
+											 nlen=NULL, nmax=NULL, neutral=NULL, olen=NULL, p=NULL, e=NULL, cache=NULL, quickMask=NULL, minlp=NULL){ # Homer options
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
 									 pos_file, genome, tempdir())
 
-	# Add extra settings with values
-	if(!is.null(mask)){cline <- paste(cline, "-mask", bg)}
+	if(!is.null(mask)){cline <- paste(cline, "-mask")}
 	if(!is.null(bg)){cline <- paste(cline, "-bg", bg)}
+	if(!is.null(chopify)){cline <- paste(cline, "-chopify")}
 	if(!is.null(len)){cline <- paste(cline, "-len", len)}
 	if(!is.null(size)){cline <- paste(cline, "-size", size)}
 	if(!is.null(S)){cline <- paste(cline, "-S", S)}
-	if(!is.null(mis)){cline <- paste(cline, "-mis", mis)}
-	if(!is.null(norevopp)){cline <- paste(cline, "-norevopp", norevopp)}
-	if(!is.null(rna)){cline <- paste(cline, "-rna", rna)}
+	if(!is.null(mis)){cline <- paste(cline, "-mis")}
+	if(!is.null(norevopp)){cline <- paste(cline, "-norevopp")}
+	if(!is.null(rna)){cline <- paste(cline, "-rna")}
 	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
+	if(!is.null(bits)){cline <- paste(cline, "-bits")}
 	if(!is.null(mcheck)){cline <- paste(cline, "-mcheck", mcheck)}
 	if(!is.null(mknown)){cline <- paste(cline, "-mknown", mknown)}
+	if(!is.null(gc)){cline <- paste(cline, "-gc")}
+	if(!is.null(cpg)){cline <- paste(cline, "-cpg")}
+	if(!is.null(noweight)){cline <- paste(cline, "-noweight")}
+	if(!is.null(h)){cline <- paste(cline, "-h")}
+	if(!is.null(N)){cline <- paste(cline, "-N", N)}
+	if(!is.null(local)){cline <- paste(cline, "-local", local)}
+	if(!is.null(redundant)){cline <- paste(cline, "-redundant", redundant)}
+	if(!is.null(maxN)){cline <- paste(cline, "-maxN", maxN)}
+	if(!is.null(maskMotif)){cline <- paste(cline, "-maskMotif", maskMotif)}
+	if(!is.null(rand)){cline <- paste(cline, "-rand")}
+	if(!is.null(ref)){cline <- paste(cline, "-ref", ref)}
+	if(!is.null(oligo)){cline <- paste(cline, "-oligo")}
+	if(!is.null(dumpFasta)){cline <- paste(cline, "-dumpFasta")}
+	if(!is.null(preparse)){cline <- paste(cline, "-preparse")}
+	if(!is.null(preparsedDir)){cline <- paste(cline, "-preparsedDir", preparsedDir)}
+	if(!is.null(keepFiles)){cline <- paste(cline, "-keepFiles")}
+	if(!is.null(fdr)){cline <- paste(cline, "-fdr", fdr)}
+	if(!is.null(nlen)){cline <- paste(cline, "-nlen", nlen)}
+	if(!is.null(nmax)){cline <- paste(cline, "-nmax", nmax)}
+	if(!is.null(neutral)){cline <- paste(cline, "-neutral")}
+	if(!is.null(olen)){cline <- paste(cline, "-olen", olen)}
 	if(!is.null(p)){cline <- paste(cline, "-p", p)}
+	if(!is.null(e)){cline <- paste(cline, "-e", e)}
+	if(!is.null(cache)){cline <- paste(cline, "-cache", cache)}
+	if(!is.null(quickMask)){cline <- paste(cline, "-quickMask")}
+	if(!is.null(minlp)){cline <- paste(cline, "-minlp", minlp)}
 
-	# Add TRUE/FALSE settings.
-	if(!is.null(nomotif)){cline <- paste(cline, "-nomotif")}
-	if(!is.null(basic)){cline <- paste(cline, "-basic")}
-	if(!is.null(bits)){cline <- paste(cline, "-bits")}
-	if(!is.null(nocheck)){cline <- paste(cline, "-nocheck")}
-	if(!is.null(noknown)){cline <- paste(cline, "-noknown")}
+# 	# Add extra settings with values
+# 	if(!is.null(bg)){cline <- paste(cline, "-bg", bg)}
+# 	if(!is.null(len)){cline <- paste(cline, "-len", len)}
+# 	if(!is.null(size)){cline <- paste(cline, "-size", size)}
+# 	if(!is.null(S)){cline <- paste(cline, "-S", S)}
+# 	if(!is.null(mis)){cline <- paste(cline, "-mis", mis)}
+#
+# 	if(!is.null(mset)){cline <- paste(cline, "-mset", mset)}
+# 	if(!is.null(mcheck)){cline <- paste(cline, "-mcheck", mcheck)}
+# 	if(!is.null(mknown)){cline <- paste(cline, "-mknown", mknown)}
+#
+# 	if(!is.null(N)){cline <- paste(cline, "-N", N)}
+# 	if(!is.null(local)){cline <- paste(cline, "-local", local)}
+# 	if(!is.null(redundant)){cline <- paste(cline, "-redundant", redundant)}
+# 	if(!is.null(maxN)){cline <- paste(cline, "-maxN", maxN)}
+# 	if(!is.null(maskMotif)){cline <- paste(cline, "-maskMotif", maskMotif)}
+# 	if(!is.null(ref)){cline <- paste(cline, "-ref", ref)}
+# 	if(!is.null(preparsedDir)){cline <- paste(cline, "-preparsedDir", preparsedDir)}
+# 	if(!is.null(fdr)){cline <- paste(cline, "-fdr", fdr)}
+#
+# 	if(!is.null(nlen)){cline <- paste(cline, "-nlen", nlen)}
+# 	if(!is.null(nlen)){cline <- paste(cline, "-nlen", nlen)}
+# 	if(!is.null(p)){cline <- paste(cline, "-p", p)}
+#
+# 	# Add TRUE/FALSE settings.
+# 	if(!is.null(mask)){cline <- paste(cline, "-mask")}
+#
+# 	if(!is.null(chopify)){cline <- paste(cline, "-chopify")}
+# 	if(!is.null(norevopp)){cline <- paste(cline, "-norevopp")}
+# 	if(!is.null(rna)){cline <- paste(cline, "-rna")}
+#
+# 	if(!is.null(bits)){cline <- paste(cline, "-bits")}
+#
+# 	if(!is.null(gc)){cline <- paste(cline, "-gc")}
+# 	if(!is.null(cpg)){cline <- paste(cline, "-cpg")}
+#
+# 	if(!is.null(h)){cline <- paste(cline, "-h")}
+# 	if(!is.null(rand)){cline <- paste(cline, "-rand")}
+# 	if(!is.null(oligo)){cline <- paste(cline, "-oligo")}
+# 	if(!is.null(dumpFasta)){cline <- paste(cline, "-dumpFasta")}
+# 	if(!is.null(preparse)){cline <- paste(cline, "-preparse")}
+# 	if(!is.null(keepFiles)){cline <- paste(cline, "-keepFiles")}
 
 	# Execute!
 	system(cline)
@@ -211,15 +302,11 @@ call_homer <- function(pos_file, genome, # Mandatory
 	# Read results back into R
 	res <- list(command=cline)
 
-	if(is.null(noknown)){
-		res$known_motifs <- parse_known()
-	}
+	res$known_motifs <- parse_known()
 
-	if(is.null(nomotif)){
-		tmp <- parse_homer()
-		res$homer_motifs <- tmp$homer_motifs
-		res$homer_PWMs <- tmp$homer_PWMs
-	}
+	tmp <- parse_homer()
+	res$homer_motifs <- tmp$homer_motifs
+	res$homer_PWMs <- tmp$homer_PWMs
 
 	# Return cline
 	res

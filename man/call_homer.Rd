@@ -4,58 +4,111 @@
 \alias{call_homer}
 \title{Motif Enrichment with Homer}
 \usage{
-call_homer(pos_file, genome, mask = NULL, bg = NULL, len = NULL,
-  size = NULL, S = NULL, mis = NULL, norevopp = NULL, nomotif = NULL,
-  rna = NULL, mset = NULL, basic = NULL, bits = NULL, nocheck = NULL,
-  mcheck = NULL, noknown = NULL, mknown = NULL, p = NULL)
+call_homer(pos_file, genome, mask = NULL, bg = NULL, chopify = NULL,
+  len = NULL, size = NULL, S = NULL, mis = NULL, norevopp = NULL,
+  rna = NULL, mset = NULL, bits = NULL, mcheck = NULL, mknown = NULL,
+  gc = NULL, cpg = NULL, noweight = NULL, h = NULL, N = NULL,
+  local = NULL, redundant = NULL, maxN = NULL, maskMotif = NULL,
+  rand = NULL, ref = NULL, oligo = NULL, dumpFasta = NULL,
+  preparse = NULL, preparsedDir = NULL, keepFiles = NULL, fdr = NULL,
+  nlen = NULL, nmax = NULL, neutral = NULL, olen = NULL, p = NULL,
+  e = NULL, cache = NULL, quickMask = NULL, minlp = NULL)
 }
 \arguments{
-\item{pos_file}{See findMotifsGenome.pl}
+\item{pos_file}{<#> (Path to input BED-file)}
 
-\item{genome}{See findMotifsGenome.pl}
+\item{genome}{<#> (Installed Homer genome) or (path to FASTA)}
 
-\item{mask}{See findMotifsGenome.pl}
+\item{mask}{(mask repeats/lower case sequence, can also add 'r' to genome, i.e. mm9r)}
 
-\item{bg}{See findMotifsGenome.pl}
+\item{bg}{<background position file> (genomic positions to be used as background, default=automatic) removes background positions overlapping with target positions}
 
-\item{len}{See findMotifsGenome.pl}
+\item{chopify}{(chop up large background regions to the avg size of target regions)}
 
-\item{size}{See findMotifsGenome.pl}
+\item{len}{<#>[,<#>,<#>...] (motif length, default=8,10,12) [NOTE: values greater 12 may cause the programto run out of memory - in these cases decrease the number of sequences analyzed (-N), or try analyzing shorter sequence regions (i.e. -size 100)]}
 
-\item{S}{See findMotifsGenome.pl}
+\item{size}{<#> (fragment size to use for motif finding, default=200) or (i.e. -size -100,50 will get sequences from -100 to +50 relative from center) or given (uses the exact regions you give it)}
 
-\item{mis}{See findMotifsGenome.pl}
+\item{S}{<#> (Number of motifs to optimize, default: 25)}
 
-\item{norevopp}{See findMotifsGenome.pl}
+\item{mis}{<#> (global optimization: searches for strings with # mismatches, default: 2)}
 
-\item{nomotif}{See findMotifsGenome.pl}
+\item{norevopp}{(don't search reverse strand for motifs)}
 
-\item{rna}{See findMotifsGenome.pl}
+\item{rna}{(output RNA motif logos and compare to RNA motif database, automatically sets -norevopp)}
 
-\item{mset}{See findMotifsGenome.pl}
+\item{mset}{<vertebrates|insects|worms|plants|yeast|all> (check against motif collects, default: auto)}
 
-\item{basic}{See findMotifsGenome.pl}
+\item{bits}{(scale sequence logos by information content, default: doesn't scale)}
 
-\item{bits}{See findMotifsGenome.pl}
+\item{mcheck}{<motif file> (known motifs to check against de novo motifs)}
 
-\item{nocheck}{See findMotifsGenome.pl}
+\item{mknown}{<motif file> (known motifs to check for enrichment)}
 
-\item{mcheck}{See findMotifsGenome.pl}
+\item{gc}{(use GC-percentage for sequence content normalization, now the default)}
 
-\item{noknown}{See findMotifsGenome.pl}
+\item{cpg}{(use CpG-percentage instead of GC-percentage for sequence content normalization)}
 
-\item{mknown}{See findMotifsGenome.pl}
+\item{noweight}{(no CG correction)}
 
-\item{p}{See findMotifsGenome.pl}
+\item{h}{(use hypergeometric for p-values, binomial is default)}
+
+\item{N}{<#> (Number of sequences to use for motif finding, default=max(50k, 2x input)}
+
+\item{local}{<#> (use local background, # of equal size regions around peaks to use i.e. 2)}
+
+\item{redundant}{<#> (Remove redundant sequences matching greater than # percent, i.e. -redundant 0.5)}
+
+\item{maxN}{<#> (maximum percentage of N's in sequence to consider for motif finding, default: 0.7)}
+
+\item{maskMotif}{<motif file1> [motif file 2]... (motifs to mask before motif finding)}
+
+\item{rand}{(randomize target and background sequences labels)}
+
+\item{ref}{<peak file> (use file for target and background - first argument is list of peak ids for targets)}
+
+\item{oligo}{(perform analysis of individual oligo enrichment)}
+
+\item{dumpFasta}{(Dump fasta files for target and background sequences for use with other programs)}
+
+\item{preparse}{(force new background files to be created)}
+
+\item{preparsedDir}{<directory> (location to search for preparsed file and/or place new files)}
+
+\item{keepFiles}{(keep temporary files)}
+
+\item{fdr}{<#> (Calculate empirical FDR for de novo discovery #=number of randomizations)}
+
+\item{nlen}{<#> (length of lower-order oligos to normalize in background, default: -nlen 3)}
+
+\item{nmax}{<#> (Max normalization iterations, default: 160)}
+
+\item{neutral}{(weight sequences to neutral frequencies, i.e. 25-percentage, 6.25-percentage, etc.)}
+
+\item{olen}{<#> (lower-order oligo normalization for oligo table, use if -nlen isn't working well)}
+
+\item{p}{<#> (Number of processors to use, default: 1)}
+
+\item{e}{<#> (Maximum expected motif instance per bp in random sequence, default: 0.01)}
+
+\item{cache}{<#> (size in MB for statistics cache, default: 500)}
+
+\item{quickMask}{(skip full masking after finding motifs, similar to original homer)}
+
+\item{minlp}{<#> (stop looking for motifs when seed logp score gets above #, default: -10)}
 }
 \value{
-List with output: command line used, and (if selected), known results, de-novo results and de-novo PWMs.
+List with output: command line used, knowm motifs, Homer motifs (de-novo) and Homer PWMs.
 }
 \description{
-Call the findMotifsGenome.pl from Homer from inside R.
+Call the findMotifsGenome.pl script from Homer directly from R.
 }
 \details{
-Simple R-wrapper for Homer's findMotifsGenome.pl. Saves all temporary files to tempdir().
+Simple R-wrapper for Homer's findMotifsGenome.pl.
+Instead of flags, it uses R-arguments which are pasted to a Homer command. Flags that modify output format are not implemented:
+-nomotif, -find, -enhancers, -enhancersOnly, -basic, -nocheck, -noknown, -nofacts, -opt, -peaks, -homer2.
+
+Saves all temporary files to tempdir(). Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
 }
 \author{
 Malte Thodberg
