@@ -4,13 +4,16 @@
 \alias{parse_known}
 \title{Parse known motifs from Homer}
 \usage{
-parse_known()
+parse_known(output_dir = tempdir())
+}
+\arguments{
+\item{output_dir}{Path to output dir for Homer analysis. Defaults to tempdir()}
 }
 \value{
 A dataframe of known motif results.
 }
 \description{
-Parse known motifs form a Homer analysis from tempdir(). Should not normally be called by the user.
+Parse known motifs form a Homer analysis from output_dir. Should not normally be called by the user.
 }
 \details{
 Parses from the "knownResults.txt" file of a Homer analysis.

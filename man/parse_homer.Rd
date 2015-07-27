@@ -4,13 +4,16 @@
 \alias{parse_homer}
 \title{Parse de-novo motifs from Homer}
 \usage{
-parse_homer()
+parse_homer(output_dir = tempdir())
+}
+\arguments{
+\item{output_dir}{Path to output dir for Homer analysis. Defaults to tempdir()}
 }
 \value{
 A list containing a dataframe of de-novo motif results and a list of corresponding PWMs.
 }
 \description{
-Parse de-novo motifs from a Homer analysis from tempdir(). Should not normally be called by the user.
+Parse de-novo motifs from a Homer analysis from output_dir. Should not normally be called by the user.
 }
 \details{
 Parses from the "homerResults/" folder and "homerMotifs.all.motifs" file of a Homer analysis and merges the results.

@@ -4,10 +4,12 @@
 \alias{GR_to_BED}
 \title{GRanges to BED}
 \usage{
-GR_to_BED(GR)
+GR_to_BED(GR, bed_fname = NULL)
 }
 \arguments{
 \item{GR}{GRanges-object.}
+
+\item{bed_fname}{Path to where file will be saved. Must end in ".bed". Defaults to tempfile().}
 }
 \value{
 Path to file.

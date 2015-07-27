@@ -3,31 +3,39 @@
 #' Saves an GRanges-object as a BED-file and returns the file location.
 #'
 #' @param GR GRanges-object.
+#' @param bed_fname Path to where file will be saved. Must end in ".bed". Defaults to tempfile().
 #' @return Path to file.
 #' @author Malte Thodberg
 #' @details Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths. The BED file is save to temp_dir().
-#' @import GenomicRanges
 #' @seealso \code{\link{tempdir}} \code{\link{tempfile}}
 #' @export
-GR_to_BED <- function(GR){
-	# Get bed
-	bed <- data.frame(seqnames(GR),
-									 start(GR)-1,
-									 end(GR),
-									 1:length(GR),
-									 width(GR),
-									 strand(GR))
+GR_to_BED <- function(GR, bed_fname=NULL){
+# 	# Get bed
+# 	bed <- data.frame(seqnames(GR),
+# 									 start(GR)-1,
+# 									 end(GR),
+# 									 1:length(GR),
+# 									 width(GR),
+# 									 strand(GR))
+
+	# Add some info
+	GR$name <- 1:length(GR)
+	GR$score <- width(GR)
 
 	# Random file name
-	bed_fname <- tempfile()
+	if(is.null(bed_fname)){
+		bed_fname <- tempfile(pattern="temp_bed_file", fileext=".bed")
+	}
 
-	# Write to file
-	write.table(x=bed,
-							file=bed_fname,
-							quote=FALSE,
-							sep="\t",
-							row.names=FALSE,
-							col.names=FALSE)
+	rtracklayer::export(object=GR, con=bed_fname)
+
+# 	# Write to file
+# 	write.table(x=bed,
+# 							file=bed_fname,
+# 							quote=FALSE,
+# 							sep="\t",
+# 							row.names=FALSE,
+# 							col.names=FALSE)
 
 	# Return name of file
 	bed_fname
@@ -35,25 +43,26 @@ GR_to_BED <- function(GR){
 
 #' Parse known motifs from Homer
 #'
-#' Parse known motifs form a Homer analysis from tempdir(). Should not normally be called by the user.
+#' Parse known motifs form a Homer analysis from output_dir. Should not normally be called by the user.
 #'
+#' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
 #' @return A dataframe of known motif results.
 #' @author Malte Thodberg
 #' @details Parses from the "knownResults.txt" file of a Homer analysis.
 #' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
-#' @import magrittr dplyr
+#' @import magrittr
 #' @export
-parse_known <- function(){
+parse_known <- function(output_dir=tempdir()){
 	# Read simple table
-	known_motifs <- read.table(file=file.path(tempdir(), "knownResults.txt"), sep="\t", header=T, comment.char="")
+	known_motifs <- read.table(file=file.path(output_dir, "knownResults.txt"), sep="\t", header=T, comment.char="")
 
 	# Reformat
 	colnames(known_motifs) <- c("Name", "Consensus", "Pval", "Log-pval", "Qval", "Tcount", "T", "Bcount", "B")
 
 	known_motifs %>%
-		mutate(T=gsub(pattern="%", replacement="", x=T) %>% as.numeric %>% divide_by(100),
+		dplyr::mutate(T=gsub(pattern="%", replacement="", x=T) %>% as.numeric %>% divide_by(100),
 					 B=gsub(pattern="%", replacement="", x=B) %>% as.numeric %>% divide_by(100)) %>%
-		select(-Tcount, -Bcount)
+		dplyr::select(-Tcount, -Bcount)
 
 	# Return
 	known_motifs
@@ -61,19 +70,19 @@ parse_known <- function(){
 
 #' Parse de-novo motifs from Homer
 #'
-#' Parse de-novo motifs from a Homer analysis from tempdir(). Should not normally be called by the user.
-#'
+#' Parse de-novo motifs from a Homer analysis from output_dir. Should not normally be called by the user.
+#' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
 #' @return A list containing a dataframe of de-novo motif results and a list of corresponding PWMs.
 #' @author Malte Thodberg
 #' @details Parses from the "homerResults/" folder and "homerMotifs.all.motifs" file of a Homer analysis and merges the results.
 #' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
-#' @import magrittr stringr tidyr dplyr
+#' @import magrittr
 #' @export
-parse_homer <- function(){
+parse_homer <- function(output_dir=tempdir()){
 	### Folder motifs
 
 	# Files
-	motif_fnames <- list.files(file.path(tempdir(), "homerResults"), full.names=TRUE)
+	motif_fnames <- list.files(file.path(output_dir, "homerResults"), full.names=TRUE)
 	motif_fnames <- motif_fnames[grepl(pattern=".motif", x=motif_fnames, fixed=TRUE)]
 
 	# Seperate PWMS
@@ -86,7 +95,7 @@ parse_homer <- function(){
 	colnames(folder_motifs) <- c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence")
 
 	# Split names
-	folder_motifs <- separate(folder_motifs, Name, into=c("Name", "Guess"), sep=",", extra="drop")
+	folder_motifs <- tidyr::separate(folder_motifs, Name, into=c("Name", "Guess"), sep=",", extra="drop")
 
 	# Rename PWMs
 	names(homer_PWMs) <- folder_motifs$Name
@@ -94,12 +103,12 @@ parse_homer <- function(){
 	### File motifs
 
 	# Read from file starting with >
-	heap <- readLines(file.path(tempdir(), "homerMotifs.all.motifs"))
+	heap <- readLines(file.path(output_dir, "homerMotifs.all.motifs"))
 	heap <- heap[grep(pattern=">", x=heap)]
 
 	# Reformat info
 	file_motifs <- heap %>%
-		str_split(pattern="\t") %>%
+		stringr::str_split(pattern="\t") %>%
 		as.data.frame %>%
 		t %>%
 		as.data.frame
@@ -107,22 +116,22 @@ parse_homer <- function(){
 	rownames(file_motifs) <- NULL
 
 	file_motifs <- file_motifs %>%
-		mutate(`Log-odds`=as.numeric(`Log-odds`),
+		dplyr::mutate(`Log-odds`=as.numeric(`Log-odds`),
 					 `Log-pval`=as.numeric(`Log-pval`),
 					 Placeholder=as.integer(Placeholder))
 
 	### Merge info
 
 	# Merge frames
-	homer_motifs <- left_join(folder_motifs, file_motifs, by=c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence"))
+	homer_motifs <- dplyr::left_join(folder_motifs, file_motifs, by=c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence"))
 
 	# Split columns
-	homer_motifs <- separate(homer_motifs, Occurence, into=c("T", "B", "P"), sep=",", extra="drop")
-	homer_motifs <- separate(homer_motifs, Statistics, into=c("Tpos", "Tstd", "Bpos", "Bstd", "StrandBias", "Multiplicity"), sep=",", extra="drop")
+	homer_motifs <- tidyr::separate(homer_motifs, Occurence, into=c("T", "B", "P"), sep=",", extra="drop")
+	homer_motifs <- tidyr::separate(homer_motifs, Statistics, into=c("Tpos", "Tstd", "Bpos", "Bstd", "StrandBias", "Multiplicity"), sep=",", extra="drop")
 
 	# Reformat
 	homer_motifs <- homer_motifs %>%
-		mutate(Consensus=gsub(pattern=">", replacement="", x=Consensus),
+		dplyr::mutate(Consensus=gsub(pattern=">", replacement="", x=Consensus),
 					 Guess=gsub(pattern="BestGuess:", replacement="", x=Guess),
 					 T=str_split(string=T, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
 					 B=str_split(string=B, pattern=":|\\(|\\)|%") %>% sapply(function(x) as.numeric(x[3]) / 100),
@@ -133,7 +142,7 @@ parse_homer <- function(){
 					 Bstd=gsub(pattern="Bstd:", replacement="", x=Bstd) %>% as.numeric,
 					 StrandBias=gsub(pattern="StrandBias:", replacement="", x=StrandBias) %>% as.numeric,
 					 Multiplicity=gsub(pattern="Multiplicity:", replacement="", x=Multiplicity) %>% as.numeric) %>%
-		mutate(Orientation=ifelse(test=grepl(pattern="RV", x=motif_fnames), yes="reverse", no="forward"),
+		dplyr::mutate(Orientation=ifelse(test=grepl(pattern="RV", x=motif_fnames), yes="reverse", no="forward"),
 					 Length=sapply(homer_PWMs, nrow))
 
 	### Trim
@@ -153,6 +162,7 @@ parse_homer <- function(){
 #'
 #' @param pos_file <#> (Path to input BED-file)
 #' @param genome <#> (Installed Homer genome) or (path to FASTA)
+#' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
 #' @param mask (mask repeats/lower case sequence, can also add 'r' to genome, i.e. mm9r)
 #' @param bg <background position file> (genomic positions to be used as background, default=automatic) removes background positions overlapping with target positions
 #' @param chopify (chop up large background regions to the avg size of target regions)
@@ -199,10 +209,10 @@ parse_homer <- function(){
 #' Instead of flags, it uses R-arguments which are pasted to a Homer command. Flags that modify output format are not implemented:
 #' -nomotif, -find, -enhancers, -enhancersOnly, -basic, -nocheck, -noknown, -nofacts, -opt, -peaks, -homer2.
 #'
-#' Saves all temporary files to tempdir(). Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
+#' Saves all temporary files to output_dir. Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
 #' @seealso \code{\link{GR_to_BED}} \code{\link{tempdir}}
 #' @export
-call_homer <- function(pos_file, genome, # Mandatory
+call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 											 mask=NULL, bg=NULL, chopify=NULL, len=NULL, size=NULL, S=NULL, mis=NULL, norevopp=NULL, rna=NULL, # Basic options
 											 mset=NULL, bits=NULL, mcheck=NULL, mknown=NULL, #Known motif options
 											 gc=NULL, cpg=NULL, noweight=NULL, # Sequence normalization options
@@ -211,7 +221,7 @@ call_homer <- function(pos_file, genome, # Mandatory
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
-									 pos_file, genome, tempdir())
+									 pos_file, genome, output_dir)
 
 	if(!is.null(mask)){cline <- paste(cline, "-mask")}
 	if(!is.null(bg)){cline <- paste(cline, "-bg", bg)}
@@ -298,6 +308,15 @@ call_homer <- function(pos_file, genome, # Mandatory
 
 	# Execute!
 	system(cline)
+
+	# Look for motifs
+	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
+									 bg,
+									 genome,
+									 file.path(output_dir, "homerMotifs.all.motifs"),
+									 file.path(output_dir, "motifInstances.tab"))
+
+	system(pos_cline)
 
 	# Read results back into R
 	res <- list(command=cline)

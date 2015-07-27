@@ -4,20 +4,23 @@
 \alias{call_homer}
 \title{Motif Enrichment with Homer}
 \usage{
-call_homer(pos_file, genome, mask = NULL, bg = NULL, chopify = NULL,
-  len = NULL, size = NULL, S = NULL, mis = NULL, norevopp = NULL,
-  rna = NULL, mset = NULL, bits = NULL, mcheck = NULL, mknown = NULL,
-  gc = NULL, cpg = NULL, noweight = NULL, h = NULL, N = NULL,
-  local = NULL, redundant = NULL, maxN = NULL, maskMotif = NULL,
-  rand = NULL, ref = NULL, oligo = NULL, dumpFasta = NULL,
-  preparse = NULL, preparsedDir = NULL, keepFiles = NULL, fdr = NULL,
-  nlen = NULL, nmax = NULL, neutral = NULL, olen = NULL, p = NULL,
-  e = NULL, cache = NULL, quickMask = NULL, minlp = NULL)
+call_homer(pos_file, genome, output_dir = tempdir(), mask = NULL,
+  bg = NULL, chopify = NULL, len = NULL, size = NULL, S = NULL,
+  mis = NULL, norevopp = NULL, rna = NULL, mset = NULL, bits = NULL,
+  mcheck = NULL, mknown = NULL, gc = NULL, cpg = NULL,
+  noweight = NULL, h = NULL, N = NULL, local = NULL, redundant = NULL,
+  maxN = NULL, maskMotif = NULL, rand = NULL, ref = NULL,
+  oligo = NULL, dumpFasta = NULL, preparse = NULL, preparsedDir = NULL,
+  keepFiles = NULL, fdr = NULL, nlen = NULL, nmax = NULL,
+  neutral = NULL, olen = NULL, p = NULL, e = NULL, cache = NULL,
+  quickMask = NULL, minlp = NULL)
 }
 \arguments{
 \item{pos_file}{<#> (Path to input BED-file)}
 
 \item{genome}{<#> (Installed Homer genome) or (path to FASTA)}
+
+\item{output_dir}{Path to output dir for Homer analysis. Defaults to tempdir()}
 
 \item{mask}{(mask repeats/lower case sequence, can also add 'r' to genome, i.e. mm9r)}
 
@@ -108,7 +111,7 @@ Simple R-wrapper for Homer's findMotifsGenome.pl.
 Instead of flags, it uses R-arguments which are pasted to a Homer command. Flags that modify output format are not implemented:
 -nomotif, -find, -enhancers, -enhancersOnly, -basic, -nocheck, -noknown, -nofacts, -opt, -peaks, -homer2.
 
-Saves all temporary files to tempdir(). Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
+Saves all temporary files to output_dir. Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
 }
 \author{
 Malte Thodberg
