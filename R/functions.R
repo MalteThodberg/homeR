@@ -265,11 +265,15 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 											 nlen=NULL, nmax=NULL, neutral=NULL, olen=NULL, p=NULL, e=NULL, cache=NULL, quickMask=NULL, minlp=NULL){ # Homer options
 
 	# GR to temporary file
+<<<<<<< HEAD
 	pos_file <- GR_to_BED(GR=pos_file)
 
 	if(!is.null(bg)){
 		bg <- GR_to_BED(GR=bg)
 		}
+=======
+	pos_file <- GR_to_BED(GR=GR)
+>>>>>>> 1973d3020cb225700c70671b4218e246941df5b5
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
@@ -374,6 +378,7 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 	res
 }
 
+<<<<<<< HEAD
 #' Find instances of de-novo Homer motifs
 #'
 #' Find instances of de-novo Homer motifs in a GRanges using Homer's annotatePeaks.pl script.
@@ -393,6 +398,15 @@ find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	# Look for motifs
 	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
 											 pos_file,
+=======
+find_instances <- function(GR, output_dir){
+	# GR to temporary file
+	bed_fname <- GR_to_BED(GR=GR, bed_fname=NULL)
+
+	# Look for motifs
+	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s -norevopp > %s",
+											 bed_fname,
+>>>>>>> 1973d3020cb225700c70671b4218e246941df5b5
 											 genome,
 											 file.path(output_dir, "homerMotifs.all.motifs"),
 											 file.path(output_dir, "motifInstances.tab"))
@@ -401,5 +415,12 @@ find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	system(pos_cline)
 
 	# Read back into R
+<<<<<<< HEAD
 	parse_instances()
+=======
+	# TO BE FILLED
+
+	# Return (dummy for now)
+	o
+>>>>>>> 1973d3020cb225700c70671b4218e246941df5b5
 }
