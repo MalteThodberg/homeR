@@ -18,7 +18,7 @@ Path to file.
 Saves an GRanges-object as a BED-file and returns the file location.
 }
 \details{
-Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths. The BED file is save to temp_dir().
+Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths (these will be overwritten).
 }
 \author{
 Malte Thodberg

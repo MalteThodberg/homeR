@@ -6,7 +6,7 @@
 #' @param bed_fname Path to where file will be saved. Must end in ".bed". Defaults to tempfile().
 #' @return Path to file.
 #' @author Malte Thodberg
-#' @details Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths. The BED file is save to temp_dir().
+#' @details Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths (these will be overwritten).
 #' @seealso \code{\link{tempdir}} \code{\link{tempfile}}
 #' @export
 GR_to_BED <- function(GR, bed_fname=NULL){
@@ -160,7 +160,7 @@ parse_homer <- function(output_dir=tempdir()){
 #'
 #' Call the findMotifsGenome.pl script from Homer directly from R.
 #'
-#' @param pos_file <#> (Path to input BED-file)
+#' @param pos_file <#> (Genomic Ranges object)
 #' @param genome <#> (Installed Homer genome) or (path to FASTA)
 #' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
 #' @param mask (mask repeats/lower case sequence, can also add 'r' to genome, i.e. mm9r)
@@ -218,6 +218,9 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 											 gc=NULL, cpg=NULL, noweight=NULL, # Sequence normalization options
 											 h=NULL, N=NULL, local=NULL, redundant=NULL, maxN=NULL, maskMotif=NULL, rand=NULL, ref=NULL, oligo=NULL, dumpFasta=NULL, preparse=NULL, preparsedDir=NULL, keepFiles=NULL, fdr=NULL, #Advanced options
 											 nlen=NULL, nmax=NULL, neutral=NULL, olen=NULL, p=NULL, e=NULL, cache=NULL, quickMask=NULL, minlp=NULL){ # Homer options
+
+	# GR to temporary file
+	pos_file <- GR_to_BED(GR=GR)
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
@@ -309,15 +312,6 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 	# Execute!
 	system(cline)
 
-	# Look for motifs
-	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
-									 bg,
-									 genome,
-									 file.path(output_dir, "homerMotifs.all.motifs"),
-									 file.path(output_dir, "motifInstances.tab"))
-
-	system(pos_cline)
-
 	# Read results back into R
 	res <- list(command=cline)
 
@@ -329,4 +323,25 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 
 	# Return cline
 	res
+}
+
+find_instances <- function(GR, output_dir){
+	# GR to temporary file
+	bed_fname <- GR_to_BED(GR=GR, bed_fname=NULL)
+
+	# Look for motifs
+	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s -norevopp > %s",
+											 bed_fname,
+											 genome,
+											 file.path(output_dir, "homerMotifs.all.motifs"),
+											 file.path(output_dir, "motifInstances.tab"))
+
+	# Execute!
+	system(pos_cline)
+
+	# Read back into R
+	# TO BE FILLED
+
+	# Return (dummy for now)
+	o
 }
