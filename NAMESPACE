@@ -2,6 +2,8 @@
 
 export(GR_to_BED)
 export(call_homer)
+export(find_instances)
 export(parse_homer)
+export(parse_instances)
 export(parse_known)
 import(magrittr)

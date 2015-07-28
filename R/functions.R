@@ -156,6 +156,51 @@ parse_homer <- function(output_dir=tempdir()){
 	list(homer_motifs=homer_motifs, homer_PWMs=homer_PWMs)
 }
 
+#' Parse instances of de-novo motifs from Homer
+#'
+#' Parse de-novo motifs instances from a Homer analysis from output_dir. Should not normally be called by the user.
+#' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
+#' @return A dataframe of the position of motif occurences.
+#' @author Malte Thodberg
+#' @details Parses from the "homerResults/motifInstances.tab" file of a Homer analysis and merges the results.
+#' @seealso \code{\link{call_homer}} \code{\link{find_instances}} \code{\link{tempdir}}
+#' @import magrittr
+#' @export
+parse_instances <- function(output_dir=tempdir()){
+	## Read and clean
+
+	# Read data
+	i <- read.table(file.path(output_dir, "motifInstances.tab"), sep = "\t", header=TRUE)
+
+	# Clean columns
+	i <- subset(i, select=c(1:5, 20:ncol(i)))
+
+	info_cols <- colnames(i)[1:7]
+	motif_cols <- colnames(i)[8:ncol(i)]
+
+	info_cols[1] <- "PeakID"
+	motif_cols <- stringr::str_split(motif_cols, pattern=fixed(".")) %>% sapply(., function(x) x[2])
+
+	colnames(i) <- c(info_cols, motif_cols)
+
+	# Clean rows
+	i <- dplyr::arrange(i, PeakID)
+
+	## Make into matrix
+
+	# Matrix of cumbersome strings
+	string_mat <- i[,8:ncol(i)]
+
+	# Only get position from strings
+	pos_mat <- apply(string_mat, 2, function(x) data.frame(raw=x) %>%
+									 	tidyr::separate(col=raw, into=c("pos", "consensus", "strand", "score"), extra="drop", sep=",|\\(|\\)") %>%
+									 	.$pos %>%
+									 	as.integer)
+
+	# Return
+	pos_mat
+}
+
 #' Motif Enrichment with Homer
 #'
 #' Call the findMotifsGenome.pl script from Homer directly from R.
@@ -220,7 +265,11 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 											 nlen=NULL, nmax=NULL, neutral=NULL, olen=NULL, p=NULL, e=NULL, cache=NULL, quickMask=NULL, minlp=NULL){ # Homer options
 
 	# GR to temporary file
-	pos_file <- GR_to_BED(GR=GR)
+	pos_file <- GR_to_BED(GR=pos_file)
+
+	if(!is.null(bg)){
+		bg <- GR_to_BED(GR=bg)
+		}
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
@@ -325,13 +374,25 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 	res
 }
 
-find_instances <- function(GR, output_dir){
+#' Find instances of de-novo Homer motifs
+#'
+#' Find instances of de-novo Homer motifs in a GRanges using Homer's annotatePeaks.pl script.
+#'
+#' @param pos_file <#> (Genomic Ranges object)
+#' @param genome <#> (Installed Homer genome) or (path to FASTA)
+#' @param output_dir Path to output dir for Homer analysis. Defaults to tempdir()
+#' @return A tidy dataframe of instances of motifs.
+#' @author Malte Thodberg
+#' @details Must point to a Homer output directory to find a 'homerMotifs.all.motifs' file. Saves a the raw output file from annotatePeaks.pl as 'motifInstances.tab" in the same folder.
+#' @seealso \code{\link{call_homer}} \code{\link{tempdir}}
+#' @export
+find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	# GR to temporary file
-	bed_fname <- GR_to_BED(GR=GR, bed_fname=NULL)
+	pos_file <- GR_to_BED(GR=pos_file)
 
 	# Look for motifs
-	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s -norevopp > %s",
-											 bed_fname,
+	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
+											 pos_file,
 											 genome,
 											 file.path(output_dir, "homerMotifs.all.motifs"),
 											 file.path(output_dir, "motifInstances.tab"))
@@ -340,8 +401,5 @@ find_instances <- function(GR, output_dir){
 	system(pos_cline)
 
 	# Read back into R
-	# TO BE FILLED
-
-	# Return (dummy for now)
-	o
+	parse_instances()
 }
