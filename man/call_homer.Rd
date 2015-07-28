@@ -16,7 +16,7 @@ call_homer(pos_file, genome, output_dir = tempdir(), mask = NULL,
   quickMask = NULL, minlp = NULL)
 }
 \arguments{
-\item{pos_file}{<#> (Path to input BED-file)}
+\item{pos_file}{<#> (Genomic Ranges object)}
 
 \item{genome}{<#> (Installed Homer genome) or (path to FASTA)}
 
