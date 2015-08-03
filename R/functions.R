@@ -170,7 +170,11 @@ parse_instances <- function(output_dir=tempdir()){
 	## Read and clean
 
 	# Read data
-	i <- read.table(file.path(output_dir, "motifInstances.tab"), sep = "\t", header=TRUE)
+	i <- read.table(file.path(output_dir, "motifInstances.tab"), 
+									sep="\t", 
+									header=TRUE, 
+									comment.char="", 
+									quote="")
 
 	# Clean columns
 	i <- subset(i, select=c(1:5, 20:ncol(i)))
@@ -270,8 +274,6 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 	if(!is.null(bg)){
 		bg <- GR_to_BED(GR=bg)
 		}
-
-	pos_file <- GR_to_BED(GR=GR)
 
 	# Build basic commond line
 	cline <- sprintf("findMotifsGenome.pl %s %s %s -nofacts",
