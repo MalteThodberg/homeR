@@ -4,12 +4,13 @@
 #'
 #' @param GR GRanges-object.
 #' @param bed_fname Path to where file will be saved. Must end in ".bed". Defaults to tempfile().
+#' @param trackline logical: Whether a dummy trackline should be included in the .bed file
 #' @return Path to file.
 #' @author Malte Thodberg
 #' @details Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths (these will be overwritten).
 #' @seealso \code{\link{tempdir}} \code{\link{tempfile}}
 #' @export
-GR_to_BED <- function(GR, bed_fname=NULL){
+GR_to_BED <- function(GR, bed_fname=NULL, trackline=FALSE){
 # 	# Get bed
 # 	bed <- data.frame(seqnames(GR),
 # 									 start(GR)-1,
@@ -27,7 +28,11 @@ GR_to_BED <- function(GR, bed_fname=NULL){
 		bed_fname <- tempfile(pattern="temp_bed_file", fileext=".bed")
 	}
 
-	rtracklayer::export(object=GR, con=bed_fname)
+	if(trackline == FALSE){
+		rtracklayer::export(object=GR, con=bed_fname)
+	}else{
+		rtracklayer::export(object=GR, con=bed_fname, trackLine=methods::new("BasicTrackLine"))
+	}
 
 # 	# Write to file
 # 	write.table(x=bed,
@@ -54,7 +59,7 @@ GR_to_BED <- function(GR, bed_fname=NULL){
 #' @export
 parse_known <- function(output_dir=tempdir()){
 	# Read simple table
-	known_motifs <- read.table(file=file.path(output_dir, "knownResults.txt"), sep="\t", header=T, comment.char="")
+	known_motifs <- utils::read.table(file=file.path(output_dir, "knownResults.txt"), sep="\t", header=T, comment.char="")
 
 	# Reformat
 	colnames(known_motifs) <- c("Name", "Consensus", "Pval", "Log-pval", "Qval", "Tcount", "T", "Bcount", "B")
@@ -170,10 +175,10 @@ parse_instances <- function(output_dir=tempdir()){
 	## Read and clean
 
 	# Read data
-	i <- read.table(file.path(output_dir, "motifInstances.tab"), 
-									sep="\t", 
-									header=TRUE, 
-									comment.char="", 
+	i <- read.table(file.path(output_dir, "motifInstances.tab"),
+									sep="\t",
+									header=TRUE,
+									comment.char="",
 									quote="")
 
 	# Clean columns
@@ -368,9 +373,9 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 	# Read results back into R
 	res <- list(command=cline)
 
-	res$known_motifs <- parse_known()
+	res$known_motifs <- parse_known(output_dir=output_dir)
 
-	tmp <- parse_homer()
+	tmp <- parse_homer(output_dir=output_dir)
 	res$homer_motifs <- tmp$homer_motifs
 	res$homer_PWMs <- tmp$homer_PWMs
 
@@ -392,7 +397,7 @@ call_homer <- function(pos_file, genome, output_dir=tempdir(),# Mandatory
 #' @export
 find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	# GR to temporary file
-	pos_file <- GR_to_BED(GR=pos_file)
+	pos_file <- GR_to_BED(GR=pos_file, trackline=TRUE)
 
 	# Look for motifs
 	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
@@ -405,5 +410,5 @@ find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	system(pos_cline)
 
 	# Read back into R
-	parse_instances()
+	parse_instances(output_dir=output_dir)
 }

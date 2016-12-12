@@ -5,12 +5,15 @@ Version: 0.1
 Date: 2015-07-21
 Author: Malte Thodberg
 Maintainer: <maltethodberg@gmail.com>
-Description: Enrichment of known and de-novo motifs using Homer, running inside of R.
+Description: Enrichment of known and de-novo motifs using Homer, running inside
+    of R.
 Imports:
-	magrittr,
-	rtracklayer,
-	stringr,
-	tidyr,
-	dplyr
+    magrittr,
+    rtracklayer,
+    stringr,
+    tidyr,
+    dplyr,
+    methods
 License: GPL-3
 LazyData: TRUE
+RoxygenNote: 5.0.1
