@@ -18,10 +18,9 @@ Parse de-novo motifs from a Homer analysis from output_dir. Should not normally 
 \details{
 Parses from the "homerResults/" folder and "homerMotifs.all.motifs" file of a Homer analysis and merges the results.
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{call_homer}} \code{\link{tempdir}}
 }
-
+\author{
+Malte Thodberg
+}

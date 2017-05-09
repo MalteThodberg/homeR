@@ -22,10 +22,9 @@ Saves an GRanges-object as a BED-file and returns the file location.
 \details{
 Saves a GRanges object as a BED-file. Names are set to increasing integers and scores are set to feature widths (these will be overwritten).
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{tempdir}} \code{\link{tempfile}}
 }
-
+\author{
+Malte Thodberg
+}

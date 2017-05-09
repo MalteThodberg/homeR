@@ -113,10 +113,9 @@ Instead of flags, it uses R-arguments which are pasted to a Homer command. Flags
 
 Saves all temporary files to output_dir. Note these files are only deleted upon closing the R-session, which can in some cases lead to files from previous runs being reloaded.
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{GR_to_BED}} \code{\link{tempdir}}
 }
-
+\author{
+Malte Thodberg
+}

@@ -18,10 +18,9 @@ Parse de-novo motifs instances from a Homer analysis from output_dir. Should not
 \details{
 Parses from the "homerResults/motifInstances.tab" file of a Homer analysis and merges the results.
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{call_homer}} \code{\link{find_instances}} \code{\link{tempdir}}
 }
-
+\author{
+Malte Thodberg
+}

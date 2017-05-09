@@ -22,10 +22,9 @@ Find instances of de-novo Homer motifs in a GRanges using Homer's annotatePeaks.
 \details{
 Must point to a Homer output directory to find a 'homerMotifs.all.motifs' file. Saves a the raw output file from annotatePeaks.pl as 'motifInstances.tab" in the same folder.
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{call_homer}} \code{\link{tempdir}}
 }
-
+\author{
+Malte Thodberg
+}

@@ -18,10 +18,9 @@ Parse known motifs form a Homer analysis from output_dir. Should not normally be
 \details{
 Parses from the "knownResults.txt" file of a Homer analysis.
 }
-\author{
-Malte Thodberg
-}
 \seealso{
 \code{\link{call_homer}} \code{\link{tempdir}}
 }
-
+\author{
+Malte Thodberg
+}
