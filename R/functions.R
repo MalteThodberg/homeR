@@ -91,10 +91,10 @@ parse_homer <- function(output_dir=tempdir()){
 	motif_fnames <- motif_fnames[grepl(pattern=".motif", x=motif_fnames, fixed=TRUE)]
 
 	# Seperate PWMS
-	homer_PWMs <- lapply(motif_fnames, read.table, skip=1, col.names=c("A", "C", "G", "T"))
+	homer_PWMs <- lapply(motif_fnames, utils::read.table, skip=1, col.names=c("A", "C", "G", "T"))
 
 	# Reformat info
-	folder_motifs <- lapply(motif_fnames, read.table, nrows=1, sep="\t") %>%
+	folder_motifs <- lapply(motif_fnames, utils::read.table, nrows=1, sep="\t") %>%
 		Reduce(rbind, .) %>%
 		as.data.frame()
 	colnames(folder_motifs) <- c("Consensus", "Name", "Log-odds", "Log-pval", "Placeholder", "Occurence")
@@ -175,7 +175,7 @@ parse_instances <- function(output_dir=tempdir()){
 	## Read and clean
 
 	# Read data
-	i <- read.table(file.path(output_dir, "motifInstances.tab"),
+	i <- utils::read.table(file.path(output_dir, "motifInstances.tab"),
 									sep="\t",
 									header=TRUE,
 									comment.char="",
@@ -400,7 +400,7 @@ find_instances <- function(pos_file, genome, output_dir=tempdir()){
 	pos_file <- GR_to_BED(GR=pos_file, trackline=TRUE)
 
 	# Look for motifs
-	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s > %s",
+	pos_cline <- sprintf("annotatePeaks.pl %s %s -m %s -size given > %s",
 											 pos_file,
 											 genome,
 											 file.path(output_dir, "homerMotifs.all.motifs"),
